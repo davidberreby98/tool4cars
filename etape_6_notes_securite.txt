@@ -1,0 +1,48 @@
+Problèmes de sécurité dans l'application Tool4cars
+
+Problème principal : Accès non sécurisé aux données
+
+Description :
+Actuellement, l'application ne possède aucun système d'identification ni de vérification d'accès. Cela veut dire que :
+- Tout le monde peut choisir un client (Client A, B ou C) sans s'identifier.
+- Le système repose uniquement sur un cookie (ex : "client=clienta") pour savoir à quel client on appartient.
+- Ce cookie peut être modifié facilement dans le navigateur.
+- Les pages PHP côté serveur affichent les données sans vérifier si l'utilisateur a réellement les droits d'accès.
+
+Conséquence :
+Une personne malveillante peut accéder aux données des autres clients en changeant simplement la valeur du cookie ou en devinant les bonnes URLs.
+
+Exemple :
+1. L'utilisateur sélectionne "Client A" dans le menu déroulant. Un cookie est créé : `client=clienta`.
+2. Il peut ensuite accéder aux données du Client A dans l'interface.
+3. S'il modifie manuellement son cookie en `client=clientb`, il pourra voir les données du Client B, même s’il n’a pas le droit.
+
+---
+
+Problème secondaire : Les fichiers JSON sont directement accessibles
+
+Description :
+Les fichiers contenant les données (comme `cars.json` ou `garages.json`) sont placés dans un dossier public du serveur. Il suffit de connaître leur URL pour y accéder directement.
+
+Exemple :
+En tapant `<nom_du_site>.com/data/cars.json`, n’importe qui peut voir la liste complète des voitures de tous les clients.
+
+Conséquence :
+Même si l’interface web était sécurisée, les données seraient quand même exposées à toute personne qui connaît le chemin des fichiers.
+
+---
+
+Solutions proposées :
+
+1. Mettre en place une authentification :
+   - Ajouter une page de connexion avec identifiant + mot de passe.
+   - Une fois connecté, on stocke un identifiant sécurisé dans un cookie ou un token de session.
+
+2. Restreindre l’accès côté serveur :
+   - Les scripts PHP (`ajax.php`, `edit.php`) doivent vérifier l’identité du client avant d’afficher les données.
+   - Exemple : Ne pas afficher les voitures du Client B à quelqu’un connecté comme Client A.
+
+3. Déplacer les fichiers JSON hors du dossier public :
+   - Les rendre inaccessibles par URL directe.
+   - Y accéder uniquement depuis les scripts PHP, qui filtrent et sécurisent l’accès selon le client connecté.
+
